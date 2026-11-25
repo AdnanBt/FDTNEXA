@@ -10,9 +10,8 @@
   $g = round(min(100, $avg / 30 * 100) / 100 * $C, 2);
   $max = max(1, $fr, $bf, $bl);
   $hasActivity = ($fr + $bf + $bl) > 0;
+  $img = fn ($f) => file_exists(public_path('images/dashboard/'.$f)) ? asset('images/dashboard/'.$f) : null; // optional rendered images
 @endphp
-
-
 <style>
 /* ===== FDTNexa dashboard · design tokens ===== */
 .fx-root{
@@ -40,20 +39,6 @@
 /* ===== background ===== */
 .fx-bg{position:absolute;inset:-4%;z-index:-1;width:108%;height:108%;pointer-events:none;animation:fx-drift 40s ease-in-out infinite alternate;
   -webkit-mask-image:radial-gradient(ellipse at 50% 28%,#000 15%,transparent 72%);mask-image:radial-gradient(ellipse at 50% 28%,#000 15%,transparent 72%)}
-
-/* Background parallax — combined with existing drift */
-.fx-root .fx-bg {
-    translate: var(--bg-x, 0px) var(--bg-y, 0px);
-    transition: translate .35s ease-out;
-    will-change: translate;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .fx-root .fx-bg {
-        translate: none !important;
-        transition: none !important;
-    }
-}
 
 /* ===== layout ===== */
 .fx-g2,.fx-g3{display:grid;gap:var(--gap);grid-template-columns:1fr}
@@ -172,814 +157,117 @@ a.fx-card:focus-visible::after{opacity:1}
 @media(hover:hover){.fx-kpi:hover{--ty:-5px;border-color:color-mix(in srgb,var(--a) 45%,transparent);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),var(--plate),0 0 30px -8px color-mix(in srgb,var(--a) 55%,transparent)}
   .fx-kpi:hover .fx-kart svg{transform:scale(1.05) translateY(-3px)}}
 
+/* ===== Stage 2 · future-tech layer ===== */
+@keyframes fx-boot{from{opacity:0;transform:translateY(16px)}}
+@keyframes fx-scan{0%{transform:translateY(-110%)}55%,100%{transform:translateY(270%)}}
+@keyframes fx-sweep{0%{transform:translateY(0);opacity:0}12%,88%{opacity:1}100%{transform:translateY(480%);opacity:0}}
+@keyframes fx-rotz{to{transform:rotateX(74deg) rotateZ(360deg)}}
+@keyframes fx-dash{to{stroke-dashoffset:-28}}
+@keyframes fx-cs{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.fx-off,.fx-off *,.fx-off *::before,.fx-off *::after{animation-play-state:paused!important}
+
+/* boot-up sequence (CSS only, content stays visible without it) */
+.fx-hero>*,.fx-tool,.fx-g4>.fx-cell{animation:fx-boot .9s cubic-bezier(.2,.8,.2,1) backwards}
+.fx-hero>:nth-child(2){animation-delay:.12s}
+.fx-g2>.fx-tool:nth-child(1){animation-delay:.25s}.fx-g2>.fx-tool:nth-child(2){animation-delay:.35s}
+.fx-g4>:nth-child(1){animation-delay:.45s}.fx-g4>:nth-child(2){animation-delay:.55s}.fx-g4>:nth-child(3){animation-delay:.65s}.fx-g4>:nth-child(4){animation-delay:.75s}
+
+/* hero: core-sample hologram */
+.fx-stage{--px:0;--py:0;position:relative;width:min(100%,430px);height:clamp(300px,42vw,430px);justify-self:center}
+.fx-stage::before{content:"";position:absolute;left:50%;top:-12%;width:64%;height:44%;transform:translateX(-50%);opacity:.75;pointer-events:none;
+  background:linear-gradient(180deg,rgba(54,217,245,.28),transparent);clip-path:polygon(38% 0,62% 0,100% 100%,0 100%)}
+.fx-halo{position:absolute;left:50%;top:46%;width:135%;aspect-ratio:1;pointer-events:none;transition:transform .3s ease-out;
+  transform:translate(-50%,-50%) translate3d(calc(var(--px)*-10px),calc(var(--py)*-8px),0);
+  background:radial-gradient(closest-side,rgba(54,217,245,.22),rgba(139,92,246,.1) 46%,transparent 72%)}
+.fx-rings{position:absolute;inset:0;perspective:700px;pointer-events:none;transition:transform .3s ease-out;transform:translate3d(calc(var(--px)*22px),calc(var(--py)*14px),0)}
+.fx-orb{position:absolute;left:50%;border-radius:50%;border:1px dashed rgba(54,217,245,.5);transform:rotateX(74deg);animation:fx-rotz 24s linear infinite}
+.fx-orb::after{content:"";position:absolute;left:50%;top:-3px;width:6px;height:6px;border-radius:50%;background:#36D9F5;box-shadow:0 0 10px #36D9F5}
+.fx-orb.r1{width:320px;height:320px;top:44%;margin:-160px 0 0 -160px}
+.fx-orb.r2{width:250px;height:250px;top:72%;margin:-125px 0 0 -125px;border-color:rgba(76,230,192,.45);animation-direction:reverse;animation-duration:30s}
+.fx-core{position:absolute;inset:0;display:grid;place-items:center;transition:transform .3s ease-out;transform:translate3d(calc(var(--px)*14px),calc(var(--py)*9px),0)}
+.fx-coresvg,.fx-coreimg{height:92%;width:auto;max-width:100%;filter:drop-shadow(0 22px 24px rgba(0,0,0,.55))}
+.cs{animation:fx-cs 6s ease-in-out infinite;animation-delay:var(--d)}
+.fx-beam{position:absolute;left:14%;right:14%;top:4%;height:16%;pointer-events:none;animation:fx-sweep 5.5s ease-in-out infinite;
+  background:linear-gradient(180deg,transparent,rgba(54,217,245,.26));border-bottom:1.5px solid rgba(180,245,255,.85);box-shadow:0 8px 18px -6px rgba(54,217,245,.7)}
+.fx-ruler{position:absolute;left:5%;top:8%;bottom:8%;width:12px;border-left:1px solid rgba(54,217,245,.55);pointer-events:none;
+  background:repeating-linear-gradient(180deg,rgba(54,217,245,.65) 0 1px,transparent 1px 14px) left/10px 100% no-repeat}
+.fx-ruler span{position:absolute;left:16px;top:38%;writing-mode:vertical-rl;font:600 .6rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.22em;color:var(--t3)}
+.fx-lay{position:absolute;inset:0;list-style:none;margin:0;padding:0;pointer-events:none;transition:transform .3s ease-out;transform:translate3d(calc(var(--px)*30px),calc(var(--py)*18px),0)}
+.fx-lay li{position:absolute;left:calc(50% + 78px);transform:translateY(-50%);padding:.3rem .5rem;font:600 .6rem/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--t2);border:1px solid rgba(54,217,245,.3);background:rgba(7,17,31,.62)}
+.fx-lay li::before{content:"";position:absolute;right:100%;top:50%;width:34px;border-top:1px dashed rgba(54,217,245,.6)}
+
+/* energy conduit: hero core -> tool portals */
+.fx-conduit{display:none;height:70px;margin-top:.5rem}
+.fx-conduit svg{width:100%;height:100%;overflow:visible}
+.fx-conduit path{fill:none;vector-effect:non-scaling-stroke;stroke:url(#fxe);stroke-width:1.6;stroke-dasharray:5 9;animation:fx-dash 1.6s linear infinite}
+.fx-conduit path.g{stroke-width:6;stroke-opacity:.14;stroke-dasharray:none;animation:none}
+.fx-conduit circle{fill:#36D9F5;filter:drop-shadow(0 0 6px #36D9F5)}
+@media(min-width:768px){.fx-conduit{display:block}}
+
+/* HUD KPI panels: cut corners, brackets, scan band */
+.fx-g4 .fx-cell::before{content:"";position:absolute;inset:16px 8px -8px;background:rgba(0,0,0,.5);filter:blur(16px);z-index:-1;pointer-events:none}
+.fx-kpi{border:0;border-radius:0;clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));
+  box-shadow:inset 0 0 0 1px rgba(141,168,188,.22),inset 0 -18px 30px -24px color-mix(in srgb,var(--a) 40%,transparent);
+  background:
+   linear-gradient(var(--a),var(--a)) left 9px top 9px/16px 1.5px no-repeat,linear-gradient(var(--a),var(--a)) left 9px top 9px/1.5px 16px no-repeat,
+   linear-gradient(var(--a),var(--a)) right 9px bottom 9px/16px 1.5px no-repeat,linear-gradient(var(--a),var(--a)) right 9px bottom 9px/1.5px 16px no-repeat,
+   linear-gradient(155deg,#1b2f48 0%,#0e1b2d 55%,#0a1422 100%)}
+@media(hover:hover){.fx-kpi:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a) 55%,transparent),inset 0 -18px 30px -24px color-mix(in srgb,var(--a) 55%,transparent)}}
+.fx-kin::before,.fx-kin::after{content:"";position:absolute;width:24px;height:24px;pointer-events:none;
+  background:linear-gradient(to bottom left,transparent calc(50% - .75px),var(--a) calc(50% - .75px),var(--a) calc(50% + .75px),transparent calc(50% + .75px))}
+.fx-kin::before{top:0;right:0}.fx-kin::after{bottom:0;left:0}
+.fx-scan{position:absolute;left:0;right:0;top:0;height:42%;z-index:0;pointer-events:none;animation:fx-scan 7s linear infinite;
+  background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--a) 12%,transparent) 70%,color-mix(in srgb,var(--a) 36%,transparent) 99%,transparent)}
+.fx-g4>:nth-child(2) .fx-scan{animation-delay:-1.8s}.fx-g4>:nth-child(3) .fx-scan{animation-delay:-3.6s}.fx-g4>:nth-child(4) .fx-scan{animation-delay:-5.4s}
+
+/* tool portals: angular panels + glowing platform */
+.fx-tool{border:0;border-radius:4px;clip-path:polygon(0 0,calc(100% - 34px) 0,100% 34px,100% 100%,34px 100%,0 calc(100% - 34px));box-shadow:inset 0 0 0 1px rgba(141,168,188,.22)}
+@media(hover:hover){a.fx-tool:hover{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--a) 55%,transparent)}}
+.fx-tool .fx-in::before,.fx-tool .fx-in::after{content:"";position:absolute;width:34px;height:34px;pointer-events:none;
+  background:linear-gradient(to bottom left,transparent calc(50% - .75px),var(--a) calc(50% - .75px),var(--a) calc(50% + .75px),transparent calc(50% + .75px))}
+.fx-tool .fx-in::before{top:0;right:0}.fx-tool .fx-in::after{bottom:0;left:0}
+.fx-art{position:relative}
+.fx-art::before{content:"";position:absolute;left:50%;bottom:4%;width:84%;aspect-ratio:2.2/1;transform:translateX(-50%);border-radius:50%;pointer-events:none;
+  border:1px solid color-mix(in srgb,var(--a) 55%,transparent);background:radial-gradient(closest-side,color-mix(in srgb,var(--a) 26%,transparent),transparent 72%)}
+.fx-art svg,.fx-artimg{position:relative;z-index:1}
+.fx-artimg{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
+
+/* phones: lighter, static version */
+@media(max-width:767px){
+  .fx-orb,.fx-lay,.fx-ruler,.fx-beam,.fx-scan,.fx-conduit,.fx-conn,.fx-vline{display:none}
+  .cs,.fx-kart,.fx-bg,.fx-tool::before,.fx-scene .fx-spin{animation:none}
+  .fx-stage{height:300px}
+}
+
+/* ===== Stage 3 · orbiting illustrations ===== */
+@keyframes fx-orbit{
+  0%,100%{translate:7px 0;scale:1}12.5%{translate:5px -4px;scale:.98}25%{translate:0 -6px;scale:.96}37.5%{translate:-5px -4px;scale:.98}
+  50%{translate:-7px 0;scale:1}62.5%{translate:-5px 4px;scale:1.02}75%{translate:0 6px;scale:1.04}87.5%{translate:5px 4px;scale:1.02}}
+@keyframes fx-sway{from{transform:perspective(520px) rotateY(-12deg)}to{transform:perspective(520px) rotateY(12deg)}}
+@keyframes fx-orbz{to{transform:perspective(500px) rotateX(72deg) rotateZ(360deg)}}
+.fx-kart{will-change:translate,transform;animation:fx-orbit 16s linear infinite,fx-sway 8s ease-in-out infinite alternate;animation-delay:var(--d,0s)}
+.fx-art svg,.fx-artimg{animation:fx-orbit 16s linear infinite,fx-sway 8s ease-in-out infinite alternate}
+.fx-kart::before,.fx-art::after{content:"";position:absolute;border-radius:50%;pointer-events:none;border:1px dashed color-mix(in srgb,var(--a) 42%,transparent);
+  background:radial-gradient(circle at 97% 50%,var(--a) 0 3px,transparent 4px);transform:perspective(500px) rotateX(72deg);animation:fx-orbz 14s linear infinite}
+.fx-kart::before{inset:2%}
+.fx-art::after{left:50%;top:0;height:100%;aspect-ratio:1/1;translate:-50% 0}
+.fx-g4>:nth-child(even) .fx-kart,.fx-g2>.fx-tool:nth-child(2) .fx-art svg,.fx-g2>.fx-tool:nth-child(2) .fx-artimg{animation-direction:reverse,alternate}
+@media(max-width:767px){.fx-kart,.fx-art svg,.fx-artimg{animation:none}.fx-kart::before,.fx-art::after{display:none}}
+
+/* ===== Stage 4 · true 3D turntable objects (desktop; SVG art stays as fallback) ===== */
+@keyframes fx-turn{to{transform:rotateX(-22deg) rotateY(360deg)}}
+.fx-tt{position:absolute;inset:0;display:grid;place-items:center;perspective:640px;pointer-events:none}
+.fx-tt3d{position:relative;width:0;height:0;scale:var(--k,1);transform-style:preserve-3d;transform:rotateX(-22deg) rotateY(0);animation:fx-turn 22s linear infinite;will-change:transform}
+.fx-tt3d i{position:absolute;left:50%;top:50%;display:grid;place-items:center;font:700 11px/1 system-ui,sans-serif;color:#06202a}
+.has3d>svg,.has3d>.fx-artimg{display:none}
+.fx-kart.has3d{animation:fx-orbit 16s linear infinite;animation-delay:var(--d,0s)}
+.fx-kart.has3d::after{content:"";position:absolute;left:16%;right:16%;bottom:4%;height:11%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent)}
+@media(max-width:1023px){.fx-art .fx-tt3d{scale:calc(var(--k,1)*.8)}}
+@media(max-width:767px){.fx-tt{display:none}}
+
 @media(max-width:480px){.fx-ico{width:43px;height:43px}.fx-num{font-size:2.1rem}.fx-mt{font-size:1.3rem}}
 @media(prefers-reduced-motion:reduce){.fx-root *,.fx-root *::before,.fx-root *::after{animation:none!important;transition:none!important}}
-
-
-/* =====================================================
-   FDTNEXA — STAGE 2: HOLOGRAPHIC ENGINEERING INTERFACE
-===================================================== */
-
-/* Dashboard boot-up */
-@keyframes fx-boot {
-  from { opacity: 0; transform: translateY(18px) scale(.985); filter: brightness(.4); }
-  to   { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); }
-}
-
-@keyframes fx-beam {
-  0%   { transform: translateY(-130%); opacity: 0; }
-  12%  { opacity: .9; }
-  88%  { opacity: .9; }
-  100% { transform: translateY(250%); opacity: 0; }
-}
-
-@keyframes fx-orbit-a {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes fx-orbit-b {
-  to { transform: rotate(-360deg); }
-}
-
-@keyframes fx-core-float {
-    0%, 100% {
-        transform: translateY(0) rotateY(-5deg);
-    }
-
-    50% {
-        transform: translateY(-12px) rotateY(5deg);
-    }
-}
-@keyframes fx-energy {
-  0%,100% { opacity: .25; }
-  50% { opacity: .9; }
-}
-
-@keyframes fx-grid-pulse {
-  0%,100% { opacity: .18; }
-  50% { opacity: .4; }
-}
-
-/* Boot sequence for the main dashboard sections */
-.fx-root .fx-hero,
-.fx-root .fx-sec,
-.fx-root .fx-vline {
-  animation: fx-boot .8s cubic-bezier(.2,.75,.25,1) both;
-}
-
-.fx-root .fx-sec:nth-of-type(2) { animation-delay: .12s; }
-.fx-root .fx-sec:nth-of-type(3) { animation-delay: .22s; }
-.fx-root .fx-sec:nth-of-type(4) { animation-delay: .32s; }
-
-
-/* Cinematic hologram chamber */
-.fx-core-stage {
-  position: relative;
-  justify-self: center;
-  width: min(100%, 390px);
-  min-height: 350px;
-  display: grid;
-  place-items: center;
-  isolation: isolate;
-  perspective: 1000px;
-  overflow: hidden;
-
-  border: 1px solid rgba(56,189,248,.2);
-
-  background:
-    radial-gradient(ellipse at 50% 48%,
-      rgba(6,182,212,.20), transparent 48%),
-    radial-gradient(ellipse at 50% 100%,
-      rgba(14,165,233,.13), transparent 65%),
-    linear-gradient(145deg,
-      rgba(17,42,61,.65), rgba(5,14,27,.35));
-
-  clip-path: polygon(
-    0 18px,18px 0,
-    calc(100% - 18px) 0,100% 18px,
-    100% calc(100% - 18px),
-    calc(100% - 18px) 100%,
-    18px 100%,0 calc(100% - 18px)
-  );
-
-  box-shadow:
-    inset 0 0 35px rgba(6,182,212,.08),
-    0 0 35px rgba(6,182,212,.07);
-}
-
-/* Background technical grid */
-.fx-core-stage::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-
-  background-image:
-    linear-gradient(rgba(56,189,248,.09) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(56,189,248,.09) 1px,transparent 1px);
-
-  background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse at center,#000,transparent 78%);
-  animation: fx-grid-pulse 5s ease-in-out infinite;
-}
-
-/* Moving scan beam */
-/* ===== HOLOGRAPHIC SCAN BEAM ===== */
-
-.fx-core-stage::after {
-    content: "";
-    position: absolute;
-    z-index: 3;
-    left: 0;
-    right: 0;
-    top: -45%;
-    height: 45%;
-    pointer-events: none;
-
-    background: linear-gradient(
-        180deg,
-        transparent,
-        rgba(34, 211, 238, .20),
-        rgba(56, 189, 248, .08),
-        transparent
-    );
-
-    filter: blur(5px);
-    animation: fx-beam 5s ease-in-out infinite;
-}
-
-/* Light source */
-
-.fx-core-stage {
-    --core-light: rgba(34, 211, 238, .22);
-}
-
-/* Geological core */
-
-.fx-core-stage .fx-core-svg {
-    position: relative;
-    z-index: 2;
-    width: min(90%, 330px);
-    height: auto;
-    overflow: visible;
-    transform-style: preserve-3d;
-
-    animation: fx-core-float 5s ease-in-out infinite;
-
-    filter:
-        drop-shadow(0 12px 12px rgba(0,0,0,.55))
-        drop-shadow(0 0 18px rgba(6,182,212,.18));
-}
-
-/* Orbit illumination */
-
-.fx-core-stage .fx-orbit-a,
-.fx-core-stage .fx-orbit-b {
-    filter: drop-shadow(0 0 7px rgba(34,211,238,.35));
-}
-/* Subtle glass reflection */
-.fx-core-stage .fx-core-label {
-  text-shadow: 0 0 10px rgba(34,211,238,.45);
-}
-
-/* Keep the visual comfortable on smaller screens */
-@media (max-width: 480px) {
-  .fx-core-stage {
-    width: 100%;
-    min-height: 320px;
-  }
-
-  .fx-core-stage .fx-core-svg {
-    width: min(94%,310px);
-  }
-}
-
-.fx-orbit {
-  position: absolute;
-  width: 78%;
-  aspect-ratio: 1;
-  border: 1px solid rgba(34,211,238,.35);
-  border-radius: 50%;
-  transform: rotateX(68deg);
-  box-shadow: 0 0 18px rgba(6,182,212,.12);
-}
-
-.fx-orbit::before,
-.fx-orbit::after {
-  content: "";
-  position: absolute;
-  inset: 12%;
-  border: 1px dashed rgba(56,189,248,.3);
-  border-radius: 50%;
-}
-
-.fx-orbit::after {
-  inset: 26%;
-  border-style: solid;
-  border-color: rgba(20,184,166,.25);
-}
-
-.fx-orbit-a {
-  animation: fx-orbit-a 22s linear infinite;
-}
-
-.fx-orbit-b {
-  width: 94%;
-  border-color: rgba(139,92,246,.28);
-  transform: rotateX(68deg) rotateZ(55deg);
-  animation: fx-orbit-b 30s linear infinite;
-}
-
-.fx-orbit-b::before {
-  border-color: rgba(139,92,246,.28);
-}
-
-.fx-core-label {
-  position: absolute;
-  z-index: 4;
-  font: 600 9px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
-  letter-spacing: .13em;
-  color: #8BE9F7;
-  text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(6,182,212,.65);
-}
-
-.fx-core-label.top {
-  top: 17px;
-  left: 18px;
-}
-
-.fx-core-label.bottom {
-  bottom: 17px;
-  left: 18px;
-}
-
-.fx-depth {
-  position: absolute;
-  z-index: 4;
-  top: 19%;
-  right: 13px;
-  bottom: 19%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  font: 9px ui-monospace,SFMono-Regular,Menlo,monospace;
-  color: rgba(148,216,235,.75);
-}
-
-.fx-depth::before {
-  content: "";
-  position: absolute;
-  right: 30px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: repeating-linear-gradient(
-    to bottom,#38BDF8 0 2px,transparent 2px 8px
-  );
-  opacity: .65;
-}
-
-.fx-depth span::before {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 1px;
-  margin: 0 5px 3px 0;
-  background: #38BDF8;
-}
-
-.fx-core-corner {
-  position: absolute;
-  z-index: 4;
-  width: 17px;
-  height: 17px;
-  border-color: #22D3EE;
-  opacity: .8;
-}
-
-.fx-core-corner.tl {
-  top: 8px;left: 8px;
-  border-top: 1px solid;border-left: 1px solid;
-}
-.fx-core-corner.tr {
-  top: 8px;right: 8px;
-  border-top: 1px solid;border-right: 1px solid;
-}
-.fx-core-corner.bl {
-  bottom: 8px;left: 8px;
-  border-bottom: 1px solid;border-left: 1px solid;
-}
-.fx-core-corner.br {
-  bottom: 8px;right: 8px;
-  border-bottom: 1px solid;border-right: 1px solid;
-}
-
-/* Engineering tool portals — angular architecture */
-.fx-tool {
-  border-radius: 4px 20px 4px 20px;
-  border-color: rgba(56,189,248,.3);
-  background:
-    linear-gradient(135deg,rgba(6,182,212,.08),transparent 38%),
-    linear-gradient(155deg,#172c42,#0b1728 75%);
-}
-
-.fx-tool .fx-in {
-  min-height: 100%;
-}
-
-.fx-tool .fx-tag {
-  border-radius: 3px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
-
-.fx-tool .fx-cta {
-  border-radius: 4px 12px 4px 12px;
-  letter-spacing: .015em;
-}
-
-.fx-tool .fx-art {
-  position: relative;
-  filter: drop-shadow(0 0 15px rgba(6,182,212,.13));
-}
-
-.fx-tool .fx-art::after {
-  content: "";
-  position: absolute;
-  left: 15%;
-  right: 15%;
-  bottom: 2px;
-  height: 1px;
-  background: linear-gradient(90deg,transparent,var(--a),transparent);
-  box-shadow: 0 0 12px var(--a);
-  animation: fx-energy 3s ease-in-out infinite;
-}
-
-/* KPI panels: technical corner details */
-.fx-kpi {
-  border-radius: 5px 19px 5px 19px;
-  background:
-    linear-gradient(135deg,color-mix(in srgb,var(--a) 8%,transparent),transparent 42%),
-    linear-gradient(155deg,#1b2f48 0%,#0e1b2d 55%,#0a1422 100%);
-}
-
-.fx-kpi .fx-kin::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: .45;
-  background:
-    linear-gradient(var(--a),var(--a)) left top / 17px 1px no-repeat,
-    linear-gradient(var(--a),var(--a)) left top / 1px 17px no-repeat,
-    linear-gradient(var(--a),var(--a)) right bottom / 17px 1px no-repeat,
-    linear-gradient(var(--a),var(--a)) right bottom / 1px 17px no-repeat;
-}
-
-.fx-kpi .fx-kid {
-  color: color-mix(in srgb,var(--a) 65%,#dbeafe);
-}
-
-.fx-kpi .fx-knum {
-  color: #F0FBFF;
-  text-shadow:
-    0 0 9px color-mix(in srgb,var(--a) 55%,transparent),
-    0 0 30px color-mix(in srgb,var(--a) 28%,transparent);
-}
-
-/* Analytics panels become technical readout surfaces */
-.fx-root .fx-sec[aria-label="Generation analytics"] .fx-card {
-  border-radius: 5px 17px 5px 17px;
-  background:
-    linear-gradient(145deg,color-mix(in srgb,var(--a) 7%,transparent),transparent 45%),
-    linear-gradient(160deg,#14263b,#0d192a);
-}
-
-.fx-root .fx-sec[aria-label="Generation analytics"] .fx-in {
-  min-height: 100%;
-}
-
-/* Mobile and accessibility */
-@media(max-width:767px) {
-  .fx-core-stage {
-    width: min(100%,340px);
-    min-height: 310px;
-  }
-
-  .fx-core-svg {
-    width: min(88%,290px);
-  }
-
-  .fx-depth {
-    right: 9px;
-    font-size: 8px;
-  }
-}
-
-@media(prefers-reduced-motion:reduce) {
-  .fx-core-stage::before,
-  .fx-core-stage::after,
-  .fx-orbit,
-  .fx-core-svg,
-  .fx-core-stage .fx-core-label,
-  .fx-tool .fx-art::after {
-    animation: none !important;
-  }
-}
-
-/* ===== PERMANENT HOLOGRAPHIC LIGHT ===== */
-
-.fx-core-stage {
-    position: relative;
-    isolation: isolate;
-}
-
-.fx-core-light {
-    position: absolute;
-    z-index: 0;
-    width: 280px;
-    height: 280px;
-    left: 50%;
-    top: 48%;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(
-        circle,
-        rgba(34, 211, 238, .45) 0%,
-        rgba(6, 182, 212, .22) 35%,
-        rgba(6, 182, 212, .08) 60%,
-        transparent 75%
-    );
-    filter: blur(22px);
-    pointer-events: none;
-    animation: fx-light-breathe 4s ease-in-out infinite;
-}
-
-@keyframes fx-light-breathe {
-    0%, 100% {
-        opacity: .45;
-        scale: .9;
-    }
-    50% {
-        opacity: 1;
-        scale: 1.15;
-    }
-}
-
-/* Floating geological core */
-
-.fx-core-svg {
-    position: relative;
-    z-index: 2;
-    animation: fx-core-float 5s ease-in-out infinite;
-    will-change: transform;
-}
-
-@keyframes fx-core-float {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-12px);
-    }
-}
-
-/* Orbit rings */
-
-.fx-orbit {
-    z-index: 1;
-    pointer-events: none;
-}
-
-/* Mobile and accessibility */
-@media (prefers-reduced-motion: reduce) {
-    .fx-core-stage::before,
-    .fx-core-stage::after,
-    .fx-orbit,
-    .fx-core-svg,
-    .fx-core-stage .fx-core-label,
-    .fx-tool .fx-art::after,
-    .fx-core-light {
-        animation: none !important;
-    }
-}
-
-
-/* =========================================
-   STAGE 3 — HOLOGRAPHIC ENERGY CONNECTIONS
-========================================= */
-
-/* Energy field around the engineering tools */
-.fx-root .fx-sec[aria-labelledby="fx-tools"] {
-    position: relative;
-    isolation: isolate;
-}
-
-/* Signal line above the two tool modules */
-.fx-root .fx-sec[aria-labelledby="fx-tools"]::before {
-    content: "";
-    position: absolute;
-    top: -22px;
-    left: 50%;
-    width: min(72%, 620px);
-    height: 1px;
-    transform: translateX(-50%);
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(34, 211, 238, .12),
-        rgba(34, 211, 238, .8),
-        rgba(20, 184, 166, .5),
-        transparent
-    );
-    box-shadow: 0 0 12px rgba(34, 211, 238, .35);
-    pointer-events: none;
-}
-
-/* Moving energy pulse */
-.fx-root .fx-sec[aria-labelledby="fx-tools"]::after {
-    content: "";
-    position: absolute;
-    top: -25px;
-    left: 14%;
-    width: 48px;
-    height: 7px;
-    border-radius: 50%;
-    background: rgba(103, 232, 249, .9);
-    filter: blur(5px);
-    box-shadow: 0 0 14px 4px rgba(34, 211, 238, .45);
-    animation: fx-energy-travel 5s ease-in-out infinite;
-    pointer-events: none;
-}
-
-@keyframes fx-energy-travel {
-    0% {
-        left: 14%;
-        opacity: 0;
-    }
-    15% {
-        opacity: 1;
-    }
-    85% {
-        opacity: 1;
-    }
-    100% {
-        left: 84%;
-        opacity: 0;
-    }
-}
-
-/* Tool cards receive a subtle energy edge */
-.fx-root .fx-tool {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-}
-
-/* Animated light passing around the card */
-.fx-root .fx-tool::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(
-        115deg,
-        transparent 10%,
-        rgba(34, 211, 238, .05) 30%,
-        var(--a) 50%,
-        rgba(34, 211, 238, .08) 70%,
-        transparent 90%
-    );
-    background-size: 250% 100%;
-    animation: fx-card-energy 7s linear infinite;
-    pointer-events: none;
-
-    /* Keep the effect only on the card edge */
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-}
-
-@keyframes fx-card-energy {
-    from { background-position: 100% 0; }
-    to   { background-position: -150% 0; }
-}
-
-/* Soft receiving glow on hover */
-.fx-root .fx-tool:hover {
-    box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--a) 35%, transparent),
-        0 0 28px color-mix(in srgb, var(--a) 15%, transparent),
-        0 22px 55px rgba(0, 0, 0, .25);
-}
-
-/* Subtle illumination behind the tool illustration */
-.fx-root .fx-tool .fx-art {
-    position: relative;
-}
-
-.fx-root .fx-tool .fx-art::before {
-    content: "";
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: var(--a);
-    opacity: .08;
-    filter: blur(35px);
-    pointer-events: none;
-    transition: opacity .4s ease, transform .4s ease;
-}
-
-.fx-root .fx-tool:hover .fx-art::before {
-    opacity: .22;
-    transform: translate(-50%, -50%) scale(1.3);
-}
-
-/* KPI panels: gentle illuminated edge */
-.fx-root .fx-kpi {
-    transition:
-        border-color .35s ease,
-        box-shadow .35s ease,
-        transform .35s ease;
-}
-
-.fx-root .fx-kpi:hover {
-    border-color: color-mix(in srgb, var(--a) 55%, transparent);
-    box-shadow:
-        0 0 22px color-mix(in srgb, var(--a) 13%, transparent),
-        0 18px 45px rgba(0, 0, 0, .2);
-}
-
-/* Respect reduced-motion preferences */
-@media (prefers-reduced-motion: reduce) {
-    .fx-root .fx-sec[aria-labelledby="fx-tools"]::after,
-    .fx-root .fx-tool::before {
-        animation: none !important;
-    }
-}
-
-/* STAGE 4 — INTERACTIVE HOLOGRAPHIC DEPTH */
-
-.fx-root .fx-core-stage {
-    transform:
-        perspective(1000px)
-        rotateX(var(--stage-rx, 0deg))
-        rotateY(var(--stage-ry, 0deg));
-
-    transform-style: preserve-3d;
-    transition: transform .25s ease-out;
-    will-change: transform;
-}
-
-
-/* ==========================================
-   FDTNEXA — CLEAN PROFESSIONAL FOOTER
-========================================== */
-
-.fx-root .fx-foot {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    min-height: 72px;
-    padding: 12px 10px;
-
-    border-top: 1px solid rgba(34,211,238,.10);
-}
-
-/* Moving background signature */
-.fx-root .fx-credit-track {
-    position: absolute;
-    z-index: 1;
-    inset: 0;
-
-    display: flex;
-    align-items: center;
-
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-
-    pointer-events: none;
-}
-
-.fx-root .fx-credit {
-    position: relative;
-    display: inline-block;
-    flex-shrink: 0;
-
-    padding-left: 100%;
-
-    color: rgba(34,211,238,.16);
-    font-size: clamp(18px, 3vw, 28px);
-    font-weight: 800;
-    letter-spacing: 4px;
-
-    text-shadow:
-        0 0 8px rgba(34,211,238,.35),
-        0 0 18px rgba(20,184,166,.22);
-
-    animation: fx-credit-scroll 22s linear infinite;
-}
-
-/* Text motion */
-@keyframes fx-credit-scroll {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-100%); }
-}
-
-/* Foreground content */
-.fx-root .fx-foot-content {
-    position: relative;
-    z-index: 3;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 5px;
-    text-align: center;
-}
-
-/* Brand row */
-.fx-root .fx-foot-brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-
-    gap: 8px;
-
-    color: rgba(203,213,225,.85);
-    font-size: 11px;
-    line-height: 1.6;
-}
-
-/* Studio row */
-.fx-root .fx-foot-product {
-    color: rgba(148,163,184,.65);
-    font-size: 10px;
-    letter-spacing: .5px;
-}
-
-/* Construction scene spacing */
-.fx-root .fx-scene {
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden;
-}
-
-.fx-root .fx-scene svg {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-/* Mobile */
-@media (max-width:480px) {
-
-    .fx-root .fx-foot {
-        min-height: 65px;
-        padding: 10px 6px;
-    }
-
-    .fx-root .fx-foot-brand {
-        font-size: 10px;
-        gap: 5px;
-    }
-
-    .fx-root .fx-foot-product {
-        font-size: 9px;
-    }
-
-    .fx-root .fx-credit {
-        font-size: 18px;
-        letter-spacing: 3px;
-    }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion:reduce) {
-    .fx-root .fx-credit {
-        animation: none;
-        padding-left: 0;
-        opacity: .5;
-    }
-}
-
 </style>
 
 <div class="fx-root">
@@ -1018,129 +306,46 @@ a.fx-card:focus-visible::after{opacity:1}
         <p class="fx-lead">Your professional workspace for field density testing and geotechnical engineering calculations. Generate reports and soil layers in seconds.</p>
         <span class="fx-status"><b></b>Engineering workspace active</span>
       </div>
-      
-<div class="fx-core-stage" aria-label="Holographic geological soil core visualization">
-<div class="fx-core-light" aria-hidden="true"></div>
-  <span class="fx-core-label top">FDTNEXA // SUBSURFACE SCAN</span>
-
-  <span class="fx-core-corner tl"></span>
-  <span class="fx-core-corner tr"></span>
-  <span class="fx-core-corner bl"></span>
-  <span class="fx-core-corner br"></span>
-
-  <div class="fx-orbit fx-orbit-a"></div>
-  <div class="fx-orbit fx-orbit-b"></div>
-
-  <div class="fx-depth" aria-hidden="true">
-    <span>00 M</span>
-    <span>02 M</span>
-    <span>04 M</span>
-    <span>06 M</span>
-    <span>08 M</span>
-  </div>
-
-  <svg class="fx-core-svg" viewBox="0 0 300 340" role="img"
-       aria-label="Exploded geological soil core with sand, gravel, clay, weathered rock and bedrock layers">
-    <defs>
-      <linearGradient id="coreSand" x1="0" y1="0" x2="1" y2="1">
-        <stop stop-color="#F5D99A"/>
-        <stop offset="1" stop-color="#A9824A"/>
-      </linearGradient>
-      <linearGradient id="coreGravel" x1="0" y1="0" x2="1" y2="1">
-        <stop stop-color="#AAB7C5"/>
-        <stop offset="1" stop-color="#566879"/>
-      </linearGradient>
-      <linearGradient id="coreClay" x1="0" y1="0" x2="1" y2="1">
-        <stop stop-color="#A87551"/>
-        <stop offset="1" stop-color="#55372D"/>
-      </linearGradient>
-      <linearGradient id="coreRock" x1="0" y1="0" x2="1" y2="1">
-        <stop stop-color="#8A91A0"/>
-        <stop offset="1" stop-color="#343D50"/>
-      </linearGradient>
-      <linearGradient id="coreBedrock" x1="0" y1="0" x2="1" y2="1">
-        <stop stop-color="#5650A0"/>
-        <stop offset="1" stop-color="#191C3C"/>
-      </linearGradient>
-      <radialGradient id="coreGlow">
-        <stop stop-color="#22D3EE" stop-opacity=".4"/>
-        <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
-      </radialGradient>
-      <filter id="coreShadow" x="-40%" y="-40%" width="180%" height="180%">
-        <feGaussianBlur stdDeviation="8"/>
-      </filter>
-    </defs>
-
-    <ellipse cx="150" cy="300" rx="100" ry="20" fill="url(#coreGlow)" filter="url(#coreShadow)"/>
-
-    <!-- Core segment 1: sand -->
-    <g transform="translate(0 0)">
-      <path d="M91 42 L150 18 L209 42 L150 67Z" fill="#F8E3B4" stroke="#67E8F9" stroke-opacity=".8"/>
-      <path d="M91 42 L150 67 L150 91 L91 66Z" fill="url(#coreSand)" stroke="#67E8F9" stroke-opacity=".5"/>
-      <path d="M150 67 L209 42 L209 66 L150 91Z" fill="#A9824A" stroke="#67E8F9" stroke-opacity=".5"/>
-      <path d="M105 43l45-18 43 18-43 18z" fill="#fff" opacity=".08"/>
-      <g fill="#fff1c8" opacity=".65">
-        <circle cx="120" cy="44" r="2"/><circle cx="145" cy="35" r="1.6"/>
-        <circle cx="170" cy="44" r="2"/><circle cx="155" cy="51" r="1.5"/>
-      </g>
-    </g>
-
-    <!-- Core segment 2: gravel -->
-    <g transform="translate(0 48)">
-      <path d="M91 42 L150 18 L209 42 L150 67Z" fill="#C2CCD5" stroke="#67E8F9" stroke-opacity=".7"/>
-      <path d="M91 42 L150 67 L150 88 L91 63Z" fill="url(#coreGravel)" stroke="#67E8F9" stroke-opacity=".4"/>
-      <path d="M150 67 L209 42 L209 63 L150 88Z" fill="#485B6C" stroke="#67E8F9" stroke-opacity=".4"/>
-      <g fill="#52677A" stroke="#D8E6F0" stroke-opacity=".45">
-        <path d="M112 41l10-8 9 7-7 8z"/><path d="M139 32l9-5 9 8-11 6z"/>
-        <path d="M163 43l11-8 9 7-12 8z"/>
-      </g>
-    </g>
-
-    <!-- Core segment 3: clay -->
-    <g transform="translate(0 96)">
-      <path d="M91 42 L150 18 L209 42 L150 67Z" fill="#B98461" stroke="#67E8F9" stroke-opacity=".7"/>
-      <path d="M91 42 L150 67 L150 88 L91 63Z" fill="url(#coreClay)" stroke="#67E8F9" stroke-opacity=".4"/>
-      <path d="M150 67 L209 42 L209 63 L150 88Z" fill="#603C2E" stroke="#67E8F9" stroke-opacity=".4"/>
-      <path d="M110 43l40-16 39 16-39 16z" fill="#E7B18B" opacity=".15"/>
-      <path d="M110 51l39 16M130 34l20 9" stroke="#E8B99A" stroke-opacity=".35"/>
-    </g>
-
-    <!-- Core segment 4: weathered rock -->
-    <g transform="translate(0 144)">
-      <path d="M91 42 L150 18 L209 42 L150 67Z" fill="#9AA6B3" stroke="#67E8F9" stroke-opacity=".7"/>
-      <path d="M91 42 L150 67 L150 88 L91 63Z" fill="url(#coreRock)" stroke="#67E8F9" stroke-opacity=".4"/>
-      <path d="M150 67 L209 42 L209 63 L150 88Z" fill="#303B50" stroke="#67E8F9" stroke-opacity=".4"/>
-      <path d="M119 42l15-13 11 10-13 10zM158 45l16-13 10 8-16 12z"
-            fill="#D1DCE8" opacity=".4"/>
-    </g>
-
-    <!-- Core segment 5: bedrock -->
-    <g transform="translate(0 192)">
-      <path d="M91 42 L150 18 L209 42 L150 67Z" fill="#7773B6" stroke="#67E8F9" stroke-opacity=".8"/>
-      <path d="M91 42 L150 67 L150 91 L91 66Z" fill="url(#coreBedrock)" stroke="#67E8F9" stroke-opacity=".5"/>
-      <path d="M150 67 L209 42 L209 66 L150 91Z" fill="#24264D" stroke="#67E8F9" stroke-opacity=".5"/>
-      <path d="M115 42l35-14 37 14-37 15z" fill="#B8B4FF" opacity=".12"/>
-      <path d="M124 48l26 12 25-11" fill="none" stroke="#A5B4FC" stroke-opacity=".5"/>
-    </g>
-
-    <!-- Measurement lines -->
-    <g fill="none" stroke="#67E8F9" stroke-width="1" opacity=".65">
-      <path d="M70 42H88M70 90H88M70 138H88M70 186H88M70 234H88M70 282H88"/>
-      <path d="M76 42V282" stroke-dasharray="2 5"/>
-      <path d="M212 42h15M212 90h15M212 138h15M212 186h15M212 234h15M212 282h15"/>
-    </g>
-
-    <!-- Floating scan target -->
-    <g fill="none" stroke="#22D3EE" opacity=".85">
-      <circle cx="150" cy="14" r="8" stroke-dasharray="3 3"/>
-      <path d="M150 2v-9M150 27v-8M138 14h-9M171 14h-9"/>
-    </g>
-  </svg>
-
-  <span class="fx-core-label bottom">CORE ANALYSIS // ACTIVE</span>
-</div>
-
+      <div class="fx-stage" aria-hidden="true">
+        <div class="fx-halo"></div>
+        <div class="fx-ruler"><span>DEPTH</span></div>
+        <div class="fx-rings"><i class="fx-orb r1"></i><i class="fx-orb r2"></i></div>
+        <div class="fx-core">
+          @if($__c = $img('soil-core.webp'))
+          <img class="fx-coreimg" src="{{ $__c }}" alt="" width="900" height="1200" decoding="async" fetchpriority="high">
+          @else
+          @php $segs = [[42,44,'c1','#f1dfae',0],[104,50,'c2','#b9c3d0',1],[172,50,'c3','#b98557',2],[240,46,'c4','#9ca8b8',3],[306,38,'c5','#8470e0',4]]; @endphp
+          <svg class="fx-coresvg" viewBox="0 0 220 360">
+            <defs>
+              <linearGradient id="c1" x1="0" x2="1"><stop offset="0" stop-color="#7d6638"/><stop offset=".4" stop-color="#ecd49a"/><stop offset="1" stop-color="#5f4d2a"/></linearGradient>
+              <linearGradient id="c2" x1="0" x2="1"><stop offset="0" stop-color="#46505d"/><stop offset=".4" stop-color="#aab4c2"/><stop offset="1" stop-color="#353c46"/></linearGradient>
+              <linearGradient id="c3" x1="0" x2="1"><stop offset="0" stop-color="#432a19"/><stop offset=".4" stop-color="#a2714a"/><stop offset="1" stop-color="#2f1c11"/></linearGradient>
+              <linearGradient id="c4" x1="0" x2="1"><stop offset="0" stop-color="#3a4552"/><stop offset=".4" stop-color="#8793a3"/><stop offset="1" stop-color="#28303a"/></linearGradient>
+              <linearGradient id="c5" x1="0" x2="1"><stop offset="0" stop-color="#2a2152"/><stop offset=".4" stop-color="#7461d1"/><stop offset="1" stop-color="#1b1437"/></linearGradient>
+              <pattern id="cgp" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.3" fill="#dbe3ee" fill-opacity=".55"/><circle cx="6.5" cy="6.5" r="1" fill="#dbe3ee" fill-opacity=".4"/></pattern>
+            </defs>
+            @foreach($segs as [$sy, $sh, $sg, $st, $si])
+            <g class="cs" style="--d:-{{ $si * 0.9 }}s">
+              <path d="M65 {{ $sy }}v{{ $sh }}a45 12 0 0 0 90 0v-{{ $sh }}a45 12 0 0 0-90 0z" fill="url(#{{ $sg }})"/>
+              @if($sg === 'c2')<path d="M65 {{ $sy }}v{{ $sh }}a45 12 0 0 0 90 0v-{{ $sh }}a45 12 0 0 0-90 0z" fill="url(#cgp)"/>@endif
+              @if($sg === 'c4')<path d="M72 {{ $sy + 10 }}l18 14 14-8 20 16M96 {{ $sy + 28 }}l16-10 22 8" fill="none" stroke="#e5ecf5" stroke-opacity=".3"/>@endif
+              <path d="M65 {{ $sy }}v{{ $sh }}" stroke="#fff" stroke-opacity=".25"/>
+              <ellipse cx="110" cy="{{ $sy }}" rx="45" ry="12" fill="{{ $st }}" stroke="#36D9F5" stroke-opacity=".6"/>
+            </g>
+            @endforeach
+          </svg>
+          @endif
+          <i class="fx-beam"></i>
+        </div>
+        <ul class="fx-lay"><li style="top:20.4%">Sand</li><li style="top:37%">Gravel</li><li style="top:54.3%">Clay</li><li style="top:71.2%">Rock</li><li style="top:87.1%">Bedrock</li></ul>
+      </div>
     </section>
+
+    <div class="fx-conduit" aria-hidden="true"><svg viewBox="0 0 1000 90" preserveAspectRatio="none">
+      <defs><linearGradient id="fxe" x1="0" x2="1"><stop offset="0" stop-color="#36D9F5"/><stop offset="1" stop-color="#4CE6C0"/></linearGradient></defs>
+      <path class="g" d="M812 0C812 50 250 30 250 90"/><path class="g" d="M812 0C812 50 750 40 750 90"/>
+      <path d="M812 0C812 50 250 30 250 90"/><path d="M812 0C812 50 750 40 750 90"/><circle cx="812" cy="3" r="4"/>
+    </svg></div>
 
     <!-- Engineering tools (primary) -->
     <section class="fx-sec" aria-labelledby="fx-tools">
@@ -1148,7 +353,8 @@ a.fx-card:focus-visible::after{opacity:1}
       <p class="fx-sub">Select a module to start your work.</p>
       <div class="fx-g2">
         <a href="{{ route('field-tool.index') }}" class="fx-card fx-tool" style="--a:var(--cyan)"><div class="fx-in">
-          <div class="fx-art" aria-hidden="true">
+          <div class="fx-art" data-tt="cone" data-dy="50" data-k="1.45" data-sp="20" aria-hidden="true">
+            @if($__a = $img('sand-cone.webp'))<img class="fx-artimg" src="{{ $__a }}" alt="" width="600" height="600" loading="lazy" decoding="async">@else
             <svg viewBox="0 0 160 150"><g class="l">
               <path class="nf" d="M0 118h160"/><rect x="18" y="113" width="84" height="5"/>
               <path d="M40 113 54 96h12l14 17"/><rect x="52" y="88" width="16" height="8"/>
@@ -1157,6 +363,7 @@ a.fx-card:focus-visible::after{opacity:1}
               <path class="dm" d="M44 118v22h32v-22M118 118v22M112 118h12M112 140h12"/>
               <circle cx="54" cy="134" r="1.4" fill="var(--a)" stroke="none"/><circle cx="62" cy="130" r="1.4" fill="var(--a)" stroke="none"/><circle cx="68" cy="136" r="1.4" fill="var(--a)" stroke="none"/>
             </g></svg>
+            @endif
           </div>
           <div>
             <div class="fx-row fx-mid"><span class="fx-ico"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M8 15h8"/></svg></span><span class="fx-tag">Module 01</span></div>
@@ -1168,12 +375,14 @@ a.fx-card:focus-visible::after{opacity:1}
         </div></a>
 
         <a href="{{ route('bulk.index') }}" class="fx-card fx-tool" style="--a:var(--teal)"><div class="fx-in">
-          <div class="fx-art" aria-hidden="true">
+          <div class="fx-art" data-tt="soil5" data-k="1.3" data-sp="24" aria-hidden="true">
+            @if($__a = $img('soil-layers.webp'))<img class="fx-artimg" src="{{ $__a }}" alt="" width="600" height="600" loading="lazy" decoding="async">@else
             <svg viewBox="0 0 240 250">
               <g class="s" style="--d:-1.2s"><use href="#fxs" y="140" style="--c:#134e4a"/></g><g class="s" style="--d:-.9s"><use href="#fxs" y="112" style="--c:#0f766e"/></g>
               <g class="s" style="--d:-.6s"><use href="#fxs" y="84" style="--c:#0d9488"/></g><g class="s" style="--d:-.3s"><use href="#fxs" y="56" style="--c:#14b8a6"/></g>
               <g class="s" style="--d:0s"><use href="#fxs" y="28" style="--c:#2dd4bf"/></g>
             </svg>
+            @endif
           </div>
           <div>
             <div class="fx-row fx-mid"><span class="fx-ico"><svg viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></span><span class="fx-tag">Module 02</span></div>
@@ -1197,8 +406,8 @@ a.fx-card:focus-visible::after{opacity:1}
       <div class="fx-g4">
 
         <!-- KPI 01 · FDT reports -->
-        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#36D9F5"><div class="fx-kin">
-          <div class="fx-kart" style="--d:0s" aria-hidden="true">
+        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#36D9F5"><div class="fx-kin"><i class="fx-scan" aria-hidden="true"></i>
+          <div class="fx-kart" style="--d:0s" data-tt="docs" data-k="1.15" data-sp="24" aria-hidden="true">
             <svg viewBox="0 0 160 160">
               <defs><linearGradient id="k1s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a5776"/><stop offset="1" stop-color="#0e2236"/></linearGradient>
               <radialGradient id="k1b"><stop offset="0" stop-color="#36D9F5" stop-opacity=".55"/><stop offset="1" stop-color="#36D9F5" stop-opacity="0"/></radialGradient></defs>
@@ -1222,8 +431,8 @@ a.fx-card:focus-visible::after{opacity:1}
         </div></div><i class="fx-conn" aria-hidden="true"></i></div>
 
         <!-- KPI 02 · bulk files -->
-        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#4CE6C0"><div class="fx-kin">
-          <div class="fx-kart" style="--d:-1.4s" aria-hidden="true">
+        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#4CE6C0"><div class="fx-kin"><i class="fx-scan" aria-hidden="true"></i>
+          <div class="fx-kart" style="--d:-1.4s" data-tt="book" data-k="1.1" data-sp="26" aria-hidden="true">
             <svg viewBox="0 0 160 160">
               <defs><linearGradient id="k2s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1f5a5a"/><stop offset="1" stop-color="#0c2530"/></linearGradient>
               <linearGradient id="k2h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4CE6C0"/><stop offset="1" stop-color="#1c9b86"/></linearGradient>
@@ -1247,8 +456,8 @@ a.fx-card:focus-visible::after{opacity:1}
         </div></div><i class="fx-conn" aria-hidden="true"></i></div>
 
         <!-- KPI 03 · soil layers (geological cutaway) -->
-        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#8B5CF6"><div class="fx-kin">
-          <div class="fx-kart" style="--d:-2.6s" aria-hidden="true">
+        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#8B5CF6"><div class="fx-kin"><i class="fx-scan" aria-hidden="true"></i>
+          <div class="fx-kart" style="--d:-2.6s" data-tt="soil4" data-k="1.05" data-sp="22" aria-hidden="true">
             <svg viewBox="0 0 200 190">
               <defs>
                 <pattern id="k3g" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#d7dee8" fill-opacity=".7"/><circle cx="5.5" cy="5" r=".8" fill="#d7dee8" fill-opacity=".5"/></pattern>
@@ -1279,8 +488,8 @@ a.fx-card:focus-visible::after{opacity:1}
         </div></div><i class="fx-conn" aria-hidden="true"></i></div>
 
         <!-- KPI 04 · FDT sheets (real derived total; holographic bars use real shares) -->
-        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#F5A524"><div class="fx-kin">
-          <div class="fx-kart" style="--d:-3.8s" aria-hidden="true">
+        <div class="fx-cell"><div class="fx-card fx-kpi" style="--a:#F5A524"><div class="fx-kin"><i class="fx-scan" aria-hidden="true"></i>
+          <div class="fx-kart" style="--d:-3.8s" data-tt="bars" data-a="{{ $h1 }}" data-b="{{ $h2 }}" data-dy="44" data-k=".95" data-sp="28" aria-hidden="true">
             <svg viewBox="0 0 160 160">
               <defs><radialGradient id="k4b"><stop offset="0" stop-color="#F5A524" stop-opacity=".45"/><stop offset="1" stop-color="#36D9F5" stop-opacity="0"/></radialGradient>
               <linearGradient id="k4p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#36D9F5" stop-opacity=".22"/><stop offset="1" stop-color="#36D9F5" stop-opacity=".04"/></linearGradient></defs>
@@ -1379,180 +588,54 @@ a.fx-card:focus-visible::after{opacity:1}
       </div>
     </section>
 
- 
-<footer class="fx-foot">
+    <footer class="fx-foot">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#14B8A6" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg>
+      <span>&copy; {{ date('Y') }} FDTNexa &middot; Geotechnical engineering software</span>
+    </footer>
+  </div>
 
-    <!-- Animated background credit -->
-    <div class="fx-credit-track" aria-hidden="true">
-        <span class="fx-credit">MADE BY M. ADNAN</span>
-    </div>
-
-    <!-- Main footer content -->
-    <div class="fx-foot-content">
-
-        <div class="fx-foot-brand">
-            <svg width="16" height="16" viewBox="0 0 24 24"
-                 fill="none" stroke="#14B8A6" stroke-width="2.2"
-                 stroke-linejoin="round" stroke-linecap="round"
-                 aria-hidden="true">
-                <path d="m12 3 9 5-9 5-9-5z"/>
-                <path d="m3 13 9 5 9-5"/>
-            </svg>
-
-            <span>
-                &copy; {{ date('Y') }} FDTNexa
-                &middot; Geotechnical engineering software
-            </span>
-        </div>
-
-        <div class="fx-foot-product">
-            &copy; {{ date('Y') }} Product of DreamForge Studio
-        </div>
-
-    </div>
-</footer>
-<footer>
-<!-- Construction site scene -->
-<div class="fx-scene" aria-hidden="true">
-    <svg viewBox="0 70 1200 150">
-        <rect x="-900" y="170" width="3000" height="80" fill="url(#fxgd)"/>
-        <rect x="-900" y="170" width="3000" height="80" fill="url(#fxh)"/>
-        <path d="M-900 187H2100M-900 204H2100"
-              fill="none" stroke="#38BDF8" stroke-opacity=".3"
-              stroke-dasharray="2 6"/>
-        <path d="M-900 170H2100" fill="none"
-              stroke="#22D3EE" stroke-opacity=".65" stroke-width="1.6"/>
-
-        <g class="tl">
-            <rect x="100" y="152" width="124" height="18" rx="9"/>
-            <circle cx="116" cy="161" r="5"/>
-            <circle cx="208" cy="161" r="5"/>
-            <path d="M120 152v-14h66v14"/>
-            <path d="M132 138v-26h38l16 26"/>
-            <path d="M140 118h22v14h-22z"/>
-            <path class="nf" d="M186 128 252 74 312 118"/>
-            <path d="M312 118l14 30-26-4z"/>
-            <path class="nf" d="M196 140 238 100"/>
-
-            <circle cx="470" cy="146" r="24"/>
-            <circle cx="470" cy="146" r="6"/>
-            <g class="fx-spin nf">
-                <path d="M470 124v44M448 146h44M454 130l32 32M486 130l-32 32"/>
-            </g>
-
-            <circle cx="596" cy="152" r="18"/>
-            <circle cx="596" cy="152" r="4"/>
-            <path d="M470 122h72l14-26h40v40"/>
-            <path d="M552 96V74h34v22"/>
-            <path d="M500 104h40v18h-40z"/>
-            <path class="dm" d="M446 62H620M446 56v12M620 56v12"/>
-
-            <rect x="728" y="166" width="76" height="4"/>
-            <path d="M752 166l16-18h16l16 18"/>
-            <rect x="760" y="140" width="16" height="8"/>
-            <rect x="748" y="96" width="56" height="44" rx="8"/>
-            <path class="nf" d="M748 112h56"/>
-            <path class="dm" d="M752 170v16h28v-16M834 170v16M828 170h12M828 186h12"/>
-
-            <path class="nf" d="M975 112 940 170M975 112 975 170M975 112 1010 170"/>
-            <rect x="963" y="94" width="24" height="18" rx="3"/>
-            <rect x="956" y="78" width="38" height="10" rx="3"/>
-            <path class="dm" d="M975 112v50"/>
-            <path d="M971 162h8l-4 8z"/>
-
-            <rect x="1086" y="92" width="12" height="78"/>
-            <path class="nf" d="M1086 106h7M1086 120h7M1086 134h7M1086 148h7M1086 162h7"/>
-            <path d="M44 170V132l22 7-22 8"/>
-        </g>
+  <!-- construction-site scene -->
+  <div class="fx-scene" aria-hidden="true">
+    <svg viewBox="0 0 1200 220">
+      <rect x="-900" y="170" width="3000" height="80" fill="url(#fxgd)"/><rect x="-900" y="170" width="3000" height="80" fill="url(#fxh)"/>
+      <path d="M-900 187H2100M-900 204H2100" fill="none" stroke="#38BDF8" stroke-opacity=".3" stroke-dasharray="2 6"/>
+      <path d="M-900 170H2100" fill="none" stroke="#22D3EE" stroke-opacity=".65" stroke-width="1.6"/>
+      <g class="tl">
+        <rect x="100" y="152" width="124" height="18" rx="9"/><circle cx="116" cy="161" r="5"/><circle cx="208" cy="161" r="5"/>
+        <path d="M120 152v-14h66v14"/><path d="M132 138v-26h38l16 26"/><path d="M140 118h22v14h-22z"/>
+        <path class="nf" d="M186 128 252 74 312 118"/><path d="M312 118l14 30-26-4z"/><path class="nf" d="M196 140 238 100"/>
+        <circle cx="470" cy="146" r="24"/><circle cx="470" cy="146" r="6"/>
+        <g class="fx-spin nf"><path d="M470 124v44M448 146h44M454 130l32 32M486 130l-32 32"/></g>
+        <circle cx="596" cy="152" r="18"/><circle cx="596" cy="152" r="4"/>
+        <path d="M470 122h72l14-26h40v40"/><path d="M552 96V74h34v22"/><path d="M500 104h40v18h-40z"/>
+        <path class="dm" d="M446 62H620M446 56v12M620 56v12"/>
+        <rect x="728" y="166" width="76" height="4"/><path d="M752 166l16-18h16l16 18"/><rect x="760" y="140" width="16" height="8"/>
+        <rect x="748" y="96" width="56" height="44" rx="8"/><path class="nf" d="M748 112h56"/>
+        <path class="dm" d="M752 170v16h28v-16M834 170v16M828 170h12M828 186h12"/>
+        <path class="nf" d="M975 112 940 170M975 112 975 170M975 112 1010 170"/><rect x="963" y="94" width="24" height="18" rx="3"/>
+        <rect x="956" y="78" width="38" height="10" rx="3"/><path class="dm" d="M975 112v50"/><path d="M971 162h8l-4 8z"/>
+        <rect x="1086" y="92" width="12" height="78"/><path class="nf" d="M1086 106h7M1086 120h7M1086 134h7M1086 148h7M1086 162h7"/>
+        <path d="M44 170V132l22 7-22 8"/>
+      </g>
     </svg>
+  </div>
 </div>
 
-</div> <!-- Closing fx-root -->
-</footer>
 <script>
-
-(function () {
-    if (
-        !matchMedia('(hover:hover) and (pointer:fine)').matches ||
-        matchMedia('(prefers-reduced-motion:reduce)').matches
-    ) return;
-
-    /* Existing card tilt — preserved */
-    document.querySelectorAll('a.fx-card,.fx-kpi').forEach(function (c) {
-        var f;
-
-        c.addEventListener('pointermove', function (e) {
-            var b = c.getBoundingClientRect();
-            var x = (e.clientX - b.left) / b.width;
-            var y = (e.clientY - b.top) / b.height;
-
-            cancelAnimationFrame(f);
-
-            f = requestAnimationFrame(function () {
-                c.style.setProperty('--ry', ((x - .5) * 7).toFixed(2) + 'deg');
-                c.style.setProperty('--rx', ((.5 - y) * 5).toFixed(2) + 'deg');
-                c.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
-                c.style.setProperty('--my', (y * 100).toFixed(1) + '%');
-            });
-        });
-
-        c.addEventListener('pointerleave', function () {
-            c.style.removeProperty('--rx');
-            c.style.removeProperty('--ry');
-        });
+(function(){
+  if(!matchMedia('(hover:hover) and (pointer:fine)').matches||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  document.querySelectorAll('a.fx-card,.fx-kpi').forEach(function(c){
+    var f;
+    c.addEventListener('pointermove',function(e){
+      var b=c.getBoundingClientRect(),x=(e.clientX-b.left)/b.width,y=(e.clientY-b.top)/b.height;
+      cancelAnimationFrame(f);
+      f=requestAnimationFrame(function(){
+        c.style.setProperty('--ry',((x-.5)*7).toFixed(2)+'deg');c.style.setProperty('--rx',((.5-y)*5).toFixed(2)+'deg');
+        c.style.setProperty('--mx',(x*100).toFixed(1)+'%');c.style.setProperty('--my',(y*100).toFixed(1)+'%');
+      });
     });
-
-    /* New holographic soil-core movement */
-    var stage = document.querySelector('.fx-core-stage');
-    if (!stage) return;
-
-    var frame;
-
-    stage.addEventListener('pointermove', function (e) {
-        var b = stage.getBoundingClientRect();
-
-        var x = (e.clientX - b.left) / b.width - .5;
-        var y = (e.clientY - b.top) / b.height - .5;
-
-        cancelAnimationFrame(frame);
-
-        frame = requestAnimationFrame(function () {
-            stage.style.setProperty('--stage-rx', (-y * 5).toFixed(2) + 'deg');
-            stage.style.setProperty('--stage-ry', (x * 7).toFixed(2) + 'deg');
-        });
-    });
-
-    stage.addEventListener('pointerleave', function () {
-        stage.style.setProperty('--stage-rx', '0deg');
-        stage.style.setProperty('--stage-ry', '0deg');
-    });
-
-
-/* Background parallax */
-var root = document.querySelector('.fx-root');
-var bg = root && root.querySelector('.fx-bg');
-
-if (root && bg) {
-    var bgFrame;
-
-    root.addEventListener('pointermove', function (e) {
-        var x = (e.clientX / window.innerWidth - .5);
-        var y = (e.clientY / window.innerHeight - .5);
-
-        cancelAnimationFrame(bgFrame);
-
-        bgFrame = requestAnimationFrame(function () {
-            bg.style.setProperty('--bg-x', (-x * 12).toFixed(2) + 'px');
-            bg.style.setProperty('--bg-y', (-y * 12).toFixed(2) + 'px');
-        });
-    });
-
-    root.addEventListener('pointerleave', function () {
-        bg.style.setProperty('--bg-x', '0px');
-        bg.style.setProperty('--bg-y', '0px');
-    });
-}
-
+    c.addEventListener('pointerleave',function(){c.style.removeProperty('--rx');c.style.removeProperty('--ry')});
+  });
 })();
 </script>
 <script>
@@ -1564,6 +647,143 @@ if (root && bg) {
     var d=Math.min(1400,500+to*30),t0=null;
     function step(t){if(t0===null)t0=t;var p=Math.min(1,(t-t0)/d),e=1-Math.pow(1-p,3);el.textContent=f.format(Math.round(to*e));if(p<1)requestAnimationFrame(step)}
     el.textContent=f.format(0);requestAnimationFrame(step);
+  });
+})();
+</script>
+<script>
+(function(){
+  var root=document.querySelector('.fx-root');if(!root)return;
+  if(window.IntersectionObserver){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){e.target.classList.toggle('fx-off',!e.isIntersecting)})},{rootMargin:'80px'});
+    root.querySelectorAll('.fx-hero,.fx-sec,.fx-conduit,.fx-scene').forEach(function(el){io.observe(el)});
+  }
+  document.addEventListener('visibilitychange',function(){root.classList.toggle('fx-off',document.hidden)});
+  var st=root.querySelector('.fx-stage');
+  if(!st||!matchMedia('(hover:hover) and (pointer:fine)').matches||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var h=root.querySelector('.fx-hero'),f;
+  h.addEventListener('pointermove',function(e){
+    var b=h.getBoundingClientRect(),x=(e.clientX-b.left)/b.width-.5,y=(e.clientY-b.top)/b.height-.5;
+    cancelAnimationFrame(f);f=requestAnimationFrame(function(){st.style.setProperty('--px',(x*2).toFixed(3));st.style.setProperty('--py',(y*2).toFixed(3))});
+  });
+  h.addEventListener('pointerleave',function(){st.style.setProperty('--px',0);st.style.setProperty('--py',0)});
+})();
+</script>
+<script>
+var FXT=(function(){
+  var PI=Math.PI,r1=function(n){return Math.round(n*100)/100};
+  function sh(bg,a){return a>0?'linear-gradient(rgba(0,0,0,'+a+'),rgba(0,0,0,'+a+')),'+bg:(a<0?'linear-gradient(rgba(255,255,255,'+(-a)+'),rgba(255,255,255,'+(-a)+')),'+bg:bg)}
+  function T(x,y,z){return 'translate3d('+r1(x)+'px,'+r1(y)+'px,'+r1(z)+'px) '}
+  /* box centred on (x,y,z). o: s side bg, t top bg, f flat colour, ff front bg, fb back bg, css extra, a alpha shading off */
+  function box(w,h,d,x,y,z,o){
+    var s=o.s,t=o.t||s,F=[],P=T(x,y,z),c=o.css||'';
+    function f(fw,fh,tr,bg,a){F.push({w:fw,h:fh,t:P+tr,bg:sh(bg,a),fc:o.f,css:c,a:a})}
+    f(w,h,'translateZ('+d/2+'px)',o.ff||s,0);
+    f(w,h,'rotateY(180deg) translateZ('+d/2+'px)',o.fb||s,.32);
+    f(d,h,'rotateY(90deg) translateZ('+w/2+'px)',s,.2);
+    f(d,h,'rotateY(-90deg) translateZ('+w/2+'px)',s,.3);
+    f(w,d,'rotateX(90deg) translateZ('+h/2+'px)',t,-.12);
+    f(w,d,'rotateX(-90deg) translateZ('+h/2+'px)',s,.55);
+    return F;
+  }
+  /* frustum (rb bottom radius, rt top radius), n facets; rt=rb gives a cylinder */
+  function frus(rb,rt,h,n,x,y,z,o){
+    var F=[],P=T(x,y,z),k=Math.cos(PI/n),ab=rb*k,at=rt*k,am=(ab+at)/2,L=Math.sqrt(h*h+(ab-at)*(ab-at)),al=Math.atan((ab-at)/h)*180/PI;
+    var fwb=2*rb*Math.sin(PI/n)+.8,fwt=2*rt*Math.sin(PI/n)+.8,ins=(fwb-fwt)/2/fwb*100,tilt=Math.abs(ab-at)>.01;
+    for(var i=0;i<n;i++){
+      F.push({w:fwb,h:L,t:P+'rotateY('+r1(i*360/n)+'deg) translateZ('+r1(am)+'px)'+(tilt?' rotateX('+r1(al)+'deg)':''),
+        bg:o.s,fc:o.f,css:o.css||'',clip:tilt?'polygon('+r1(ins)+'% 0,'+r1(100-ins)+'% 0,100% 100%,0 100%)':'',a:.15});
+    }
+    if(!o.open){
+      F.push({w:rt*2,h:rt*2,t:P+'rotateX(90deg) translateZ('+h/2+'px)',bg:o.t||o.s,fc:o.ft||o.f,r:1,css:o.css||'',a:-.1});
+      F.push({w:rb*2,h:rb*2,t:P+'rotateX(-90deg) translateZ('+h/2+'px)',bg:o.s,fc:o.f,r:1,css:o.css||'',a:.5});
+    }
+    return F;
+  }
+  function disc(r,x,y,z,bg,fc,txt){ // flat circle facing the viewer
+    return [{w:r*2,h:r*2,t:T(x,y,z),bg:bg,fc:fc,r:1,txt:txt||'',css:'',a:0}];
+  }
+  function ring(r,x,y,z,col){ // flat horizontal dashed ring
+    return [{w:r*2,h:r*2,t:T(x,y,z)+'rotateX(90deg)',bg:'transparent',fc:null,r:1,css:'border:1px dashed '+col,a:0}];
+  }
+
+  var SOIL=[
+    {n:'sand',s:'radial-gradient(circle,rgba(120,90,40,.38) .7px,transparent 1px) 0 0/5px 5px,#d6b877',t:'#e8d4a2',f:'#d6b877'},
+    {n:'gravel',s:'radial-gradient(circle,#e3e9f1 1.2px,transparent 1.8px) 0 0/8px 8px,radial-gradient(circle,#667180 1px,transparent 1.6px) 3px 4px/9px 9px,#8b96a6',t:'#9aa5b4',f:'#8b96a6'},
+    {n:'clay',s:'repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 2px,transparent 2px 5px),#7b5638',t:'#8a6141',f:'#7b5638'},
+    {n:'fill',s:'repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 1px,transparent 1px 4px),#5b4a3a',t:'#6a5846',f:'#5b4a3a'},
+    {n:'rock',s:'linear-gradient(135deg,rgba(255,255,255,.14) 0 22%,transparent 22% 62%,rgba(0,0,0,.22) 62%),#4a3f86',t:'#5a4d9c',f:'#4a3f86'}
+  ];
+  var RIM='box-shadow:inset 0 0 0 1px rgba(54,217,245,.55)';
+  function soil(count,w,h,gap,glass){
+    var F=[],i,y0=-(count-1)*(h+gap)/2,idx=count===4?[0,1,2,4]:[0,1,2,3,4];
+    for(i=0;i<count;i++){var L=SOIL[idx[i]];F=F.concat(box(w,h,w,0,y0+i*(h+gap),0,{s:L.s,t:L.t,f:L.f,css:i===0?RIM:''}))}
+    if(glass)F=F.concat(box(w+10,5,w+10,0,y0-(h+gap)-6,0,{s:'rgba(94,234,212,.22)',t:'rgba(94,234,212,.28)',f:'#5eead4',css:'box-shadow:inset 0 0 0 1px rgba(94,234,212,.8)'}));
+    return F;
+  }
+  function sheets(n,w,h,front,back,side,fc,badge,gap){gap=gap||6;
+    var F=[],i;
+    for(i=0;i<n;i++){
+      var z=(i-(n-1)/2)*gap,x=(i-(n-1)/2)*-2;
+      F=F.concat(box(w,h,2.4,x,0,z,{s:side,ff:i===n-1?front:side,fb:i===0?back:side,f:fc}));
+    }
+    if(badge)F=F.concat(disc(9,w/2-12+((n-1)/2)*2,h/2-14,(n-1)/2*gap+2,badge.bg,badge.fc,badge.t));
+    return F;
+  }
+  var scenes={
+    soil5:function(){return soil(5,104,14,5,true)},
+    soil4:function(){return soil(4,96,13,5,true)},
+    docs:function(){
+      return sheets(5,76,98,
+        'repeating-linear-gradient(0deg,transparent 0 8px,rgba(141,168,188,.7) 8px 9.2px) 10px 30px/56px 52px no-repeat,linear-gradient(#36D9F5,#36D9F5) 10px 12px/28px 3px no-repeat,linear-gradient(150deg,#2a5776,#0e2236)',
+        'repeating-linear-gradient(0deg,transparent 0 8px,rgba(141,168,188,.35) 8px 9.2px) 10px 14px/56px 70px no-repeat,linear-gradient(150deg,#1d3d57,#0b1b2c)',
+        '#16324a','#2a5776',{bg:'#4CE6C0',fc:'#4CE6C0',t:'✓'},5.5);
+    },
+    book:function(){
+      var grid='linear-gradient(rgba(141,232,210,.45) 1px,transparent 1px) 0 18px/100% 14px,linear-gradient(90deg,rgba(141,232,210,.45) 1px,transparent 1px) 0 0/22px 100%,';
+      return sheets(4,84,78,
+        'linear-gradient(90deg,#4CE6C0,#1c9b86) 0 0/100% 16px no-repeat,'+grid+'linear-gradient(150deg,#1f5a5a,#0c2530)',
+        grid+'linear-gradient(150deg,#174a4c,#0a2128)','#14464a','#1f5a5a',{bg:'#4CE6C0',fc:'#4CE6C0',t:'✕'},6);
+    },
+    bars:function(a,b){
+      var F=box(128,6,86,0,0,0,{s:'rgba(54,217,245,.20)',t:'rgba(54,217,245,.26)',f:'#1b6b80',css:'box-shadow:inset 0 0 0 1px rgba(54,217,245,.7)'});
+      F=F.concat(box(24,a,24,-28,-3-a/2,0,{s:'#1aa3bd',t:'#b7f3ff',f:'#1aa3bd'}));
+      F=F.concat(box(24,b,24,28,-3-b/2,0,{s:'#0f8f7e',t:'#c4fbee',f:'#0f8f7e'}));
+      return F.concat(ring(46,0,-3-Math.max(a,b)-14,0,'rgba(245,165,36,.8)'));
+    },
+    cone:function(){
+      var F=[],glass='linear-gradient(90deg,rgba(255,255,255,.22),rgba(180,230,255,.10) 45%,rgba(0,0,0,.22)),rgba(150,210,240,.16)';
+      var metal='linear-gradient(90deg,#d8dee6,#8a97a8 50%,#4d5967)',brass='linear-gradient(90deg,#f1cf8a,#c99a4b 50%,#7a5a22)';
+      F=F.concat(box(104,4,104,0,0,0,{s:'#7d8a9b',t:'#a9b6c6',f:'#7d8a9b'}));
+      F=F.concat(disc(14,0,-2.2,0,'#0b1218','#0b1218').map(function(f){f.t=T(0,-2.3,0)+'rotateX(90deg)';return f}));
+      F=F.concat(frus(27,9,26,14,0,-15,0,{s:metal,t:'#b4bfcc',f:'#8a97a8',open:true}));
+      F=F.concat(frus(9,9,8,12,0,-32,0,{s:brass,t:'#e0b868',f:'#c99a4b'}));
+      F=F.concat(frus(25,25,40,14,0,-56,0,{s:'linear-gradient(90deg,#f0d9a0,#d9bd7f 50%,#8f7740)',t:'#ecd49a',f:'#d9bd7f'}));
+      F=F.concat(frus(29,29,60,14,0,-66,0,{s:glass,t:'rgba(160,220,250,.25)',f:'#9fd3ec',css:'box-shadow:inset 0 0 0 1px rgba(54,217,245,.35)'}));
+      F=F.concat(frus(30,30,6,14,0,-99,0,{s:metal,t:'#b4bfcc',f:'#8a97a8'}));
+      return F;
+    }
+  };
+  return {scenes:scenes,build:function(name,a,b){return scenes[name](a,b)},r1:r1};
+})();
+
+(function(){
+  if(!matchMedia('(min-width:768px)').matches||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  document.querySelectorAll('[data-tt]').forEach(function(el,n){
+    if(el.querySelector('img'))return;
+    var F,dy=parseFloat(el.getAttribute('data-dy'))||0;
+    try{F=FXT.build(el.getAttribute('data-tt'),parseFloat(el.getAttribute('data-a'))||0,parseFloat(el.getAttribute('data-b'))||0)}catch(e){return}
+    var s=document.createElement('div'),r=document.createElement('div'),fr=document.createDocumentFragment();
+    s.className='fx-tt';r.className='fx-tt3d';
+    r.style.setProperty('--k',el.getAttribute('data-k')||1);r.style.animationDuration=(el.getAttribute('data-sp')||22)+'s';
+    if(n%2)r.style.animationDirection='reverse';
+    F.forEach(function(f){
+      var i=document.createElement('i'),st=i.style;
+      st.width=f.w+'px';st.height=f.h+'px';st.margin=(-f.h/2)+'px 0 0 '+(-f.w/2)+'px';
+      st.transform=(dy?'translate3d(0,'+dy+'px,0) ':'')+f.t;st.background=f.bg;
+      if(f.r)st.borderRadius='50%';if(f.clip)st.clipPath=f.clip;if(f.txt)i.textContent=f.txt;if(f.css)st.cssText+=';'+f.css;
+      fr.appendChild(i);
+    });
+    r.appendChild(fr);s.appendChild(r);el.appendChild(s);el.classList.add('has3d');
   });
 })();
 </script>
