@@ -107,6 +107,29 @@ class FieldToolController extends Controller
             $drawing->setWorksheet($sheet);
         }
 
+// 4. Add FDTNexa watermark at the bottom-right (Row 40)
+$watermarkPath = public_path('images/fdtnexa-logo.png');
+
+if (file_exists($watermarkPath)) {
+    $watermark = new Drawing();
+
+    $watermark->setName('FDTNexa Watermark');
+    $watermark->setDescription('FDTNexa Branding');
+    $watermark->setPath($watermarkPath);
+
+    // Position near the bottom-right corner
+    $watermark->setCoordinates('k40');
+
+    // Keep original logo proportions
+    $watermark->setResizeProportional(true);
+    $watermark->setWidth(50);
+
+    $watermark->setOffsetX(5);
+    $watermark->setOffsetY(2);
+
+    $watermark->setWorksheet($sheet);
+}
+
        
         // 4. Generate Excel and record successful generation
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
