@@ -41,6 +41,10 @@ class SoilLayerGenerator
     private ?string $drawingPath = null;
     private ?string $printerPath = null;
     private ?string $drawingRelsPath = null;
+    /** free plan = FDTNexa watermark + sheet protection; paid plan = clean master copy */
+    private bool $freePlan = true;
+    /** optional: also block add/delete/move/copy of sheets (free plan only) */
+    private bool $lockStructure = false;
     /** @var array<int,array{a:array<string,string>,tag:string}> */
     private array $sheetRels = [];
     /** @var string[] */
@@ -53,7 +57,8 @@ class SoilLayerGenerator
     /**
      * @param array{
      *   total_layers:int, start_comp:float, start_moist:float, step_comp:float, step_moist:float,
-     *   custom_dates?:string[], skip_fridays?:bool, data_offset?:int, meta_offset?:int
+     *   custom_dates?:string[], skip_fridays?:bool, data_offset?:int, meta_offset?:int,
+     *   free_plan?:bool, lock_structure?:bool
      * } $o
      * @return string[] names of the sheets that were created
      */
@@ -64,6 +69,8 @@ class SoilLayerGenerator
         $metaOff     = (int) ($o['meta_offset'] ?? 3);
         $skipFri     = (bool) ($o['skip_fridays'] ?? true);
         $customDates = $o['custom_dates'] ?? [];
+        $this->freePlan      = (bool) ($o['free_plan'] ?? true);
+        $this->lockStructure = $this->freePlan && (bool) ($o['lock_structure'] ?? false);
 
         // validate dates BEFORE doing any work
         $parsedCustom = [];
@@ -617,15 +624,204 @@ class SoilLayerGenerator
         return match ($n) { 1 => '1ST', 2 => '2ND', 3 => '3RD', default => $n . 'TH' };
     }
 
+
+
+/**
+ * Add the FDTNexa watermark to the existing master drawing.
+ *
+ * The drawing is shared as the source for every generated layer,
+ * so the watermark will be copied to all layers automatically.
+ */
+private function addWatermarkToMasterDrawing(): void
+{
+    if ($this->drawingPath === null) {
+        throw new RuntimeException('The master template has no existing drawing. Please use the template containing your original logo.');
+    }
+    if (!isset($this->files[$this->drawingPath])) {
+        throw new RuntimeException('The master drawing part is missing.');
+    }
+
+    $watermarkPath = public_path('images/fdtnexa-logo.png');
+    if (!is_file($watermarkPath)) {
+        throw new RuntimeException('FDTNexa watermark image not found: public/images/fdtnexa-logo.png');
+    }
+    $info = getimagesize($watermarkPath);
+    if ($info === false || ($info['mime'] ?? '') !== 'image/png') {
+        throw new RuntimeException('The FDTNexa watermark must be a valid PNG image.');
+    }
+    $imageData = file_get_contents($watermarkPath);
+    if ($imageData === false) {
+        throw new RuntimeException('Could not read the FDTNexa watermark image.');
+    }
+
+    $drawingXml = $this->files[$this->drawingPath];
+    if (str_contains($drawingXml, 'FDTNexa Watermark')) {
+        return;
+    }
+
+    $emu      = 9525;
+    $widthPx  = 50;
+    $heightPx = max(1, (int) round($widthPx * ($info[1] / $info[0])));
+    $cx = $widthPx * $emu;
+    $cy = $heightPx * $emu;
+
+    // media part (unique name)
+    $imagePath = 'xl/media/fdtnexa-watermark.png';
+    for ($n = 2; isset($this->files[$imagePath]); $n++) {
+        $imagePath = "xl/media/fdtnexa-watermark-{$n}.png";
+    }
+    $this->files[$imagePath] = $imageData;
+
+    // png content type
+    $ct = $this->files['[Content_Types].xml'];
+    if (!preg_match('~<Default\b[^>]*Extension="png"~i', $ct)) {
+        $ct = str_replace('</Types>', '<Default Extension="png" ContentType="image/png"/></Types>', $ct);
+        $this->files['[Content_Types].xml'] = $ct;
+    }
+
+    // drawing rels (handle missing / empty / self-closing)
+    $drawingDir = dirname($this->drawingPath);
+    $this->drawingRelsPath = $drawingDir . '/_rels/' . basename($this->drawingPath) . '.rels';
+    $relsXml = $this->files[$this->drawingRelsPath] ?? '';
+    if (trim($relsXml) === '') {
+        $relsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' . self::REL_NS . '"></Relationships>';
+    } elseif (preg_match('~<Relationships\b[^>]*/>~', $relsXml)) {
+        $relsXml = preg_replace('~<Relationships\b([^>]*?)\s*/>~', '<Relationships$1></Relationships>', $relsXml, 1);
+    }
+
+    preg_match_all('~\bId="rId(\d+)"~', $relsXml, $ids);
+    $rid = 'rId' . (empty($ids[1]) ? 1 : max(array_map('intval', $ids[1])) + 1);
+
+    $rel = '<Relationship Id="' . $rid . '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="'
+        . htmlspecialchars($this->relativeTarget($drawingDir, $imagePath), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '"/>';
+    $relsXml = preg_replace_callback('~</Relationships>~', fn ($m) => $rel . $m[0], $relsXml, 1);
+    $this->files[$this->drawingRelsPath] = $relsXml;
+
+    // unique shape id (works with or without the xdr: prefix)
+    preg_match_all('~<(?:\w+:)?cNvPr\b[^>]*\bid="(\d+)"~', $drawingXml, $sid);
+    $shapeId = (empty($sid[1]) ? 1 : max(array_map('intval', $sid[1]))) + 1;
+
+    // K40, offsets X=5px Y=2px  (col/row are zero-based)
+    $col = 10; $row = 39; $offX = 5 * $emu; $offY = 2 * $emu;
+
+    // all three namespaces declared on the anchor itself, so it is valid whatever the root declares
+    $anchor =
+        '<xdr:oneCellAnchor xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"'
+        . ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+        . ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        . '<xdr:from><xdr:col>' . $col . '</xdr:col><xdr:colOff>' . $offX . '</xdr:colOff>'
+        . '<xdr:row>' . $row . '</xdr:row><xdr:rowOff>' . $offY . '</xdr:rowOff></xdr:from>'
+        . '<xdr:ext cx="' . $cx . '" cy="' . $cy . '"/>'
+        . '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="' . $shapeId . '" name="FDTNexa Watermark" descr="FDTNexa Branding"/>'
+        . '<xdr:cNvPicPr><a:picLocks noChangeAspect="1" noMove="1" noResize="1" noSelect="1"/></xdr:cNvPicPr></xdr:nvPicPr>'
+        . '<xdr:blipFill><a:blip r:embed="' . $rid . '"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+        . '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' . $cx . '" cy="' . $cy . '"/></a:xfrm>'
+        . '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>'
+        . '<xdr:clientData fLocksWithSheet="1"/></xdr:oneCellAnchor>';
+
+    $updated = preg_replace_callback('~</(?:\w+:)?wsDr>~', fn ($m) => $anchor . $m[0], $drawingXml, 1, $count);
+    if ($count !== 1 || $updated === null) {
+        throw new RuntimeException('Could not insert the FDTNexa watermark into the master drawing.');
+    }
+    $this->files[$this->drawingPath] = $updated;
+}
+
+
+
+    // ==================================================================
+    // Free-plan protection
+    // ==================================================================
+    /** random password that is never stored or shown; only its salted hash goes into the file */
+    private function newProtection(): array
+    {
+        $spin = 100000;
+        $salt = random_bytes(16);
+        $pass = bin2hex(random_bytes(16));
+        $h = hash('sha512', $salt . mb_convert_encoding($pass, 'UTF-16LE', 'UTF-8'), true);
+        for ($i = 0; $i < $spin; $i++) {
+            $h = hash('sha512', $h . pack('V', $i), true);
+        }
+        return ['salt' => base64_encode($salt), 'hash' => base64_encode($h), 'spin' => $spin];
+    }
+
+    /** every cell style gets locked="0" so the whole sheet stays editable under protection */
+    private function unlockAllCells(string $styles): string
+    {
+        $count = 0;
+        $out = preg_replace_callback('~<cellXfs\b[^>]*>.*?</cellXfs>~s', function (array $blk) use (&$count): string {
+            return preg_replace_callback('~<xf\b([^>]*?)(/>|>(.*?)</xf>)~s', function (array $m) use (&$count): string {
+                $count++;
+                $attrs = preg_replace('~\sapplyProtection="[^"]*"~', '', $m[1]);
+                $inner = isset($m[3]) ? preg_replace('~<protection\b[^>]*/>~', '', $m[3]) : '';
+                $lock  = '<protection locked="0"/>';
+                $p = strpos($inner, '<extLst');
+                $inner = $p !== false ? substr($inner, 0, $p) . $lock . substr($inner, $p) : $inner . $lock;
+                return '<xf' . $attrs . ' applyProtection="1">' . $inner . '</xf>';
+            }, $blk[0]);
+        }, $styles, 1);
+
+        if ($out === null || $count === 0) {
+            throw new RuntimeException('Could not unlock the cell styles in the template.');
+        }
+        return $out;
+    }
+
+    /** <sheetProtection> must sit right after </sheetData> (and <sheetCalcPr/> if present) */
+    private function addSheetProtection(string $xml, array $p): string
+    {
+        $xml = preg_replace('~<sheetProtection\b[^>]*/>~', '', $xml);
+        if (!preg_match('~</sheetData>(\s*<sheetCalcPr\b[^>]*/>)?~', $xml, $m, PREG_OFFSET_CAPTURE)) {
+            throw new RuntimeException('Could not locate sheetData to add sheet protection.');
+        }
+        $pos = $m[0][1] + strlen($m[0][0]);
+
+        // attribute value 0 = ALLOWED; objects="1" locks the watermark picture
+        $tag = '<sheetProtection algorithmName="SHA-512" hashValue="' . $p['hash'] . '" saltValue="' . $p['salt']
+            . '" spinCount="' . $p['spin'] . '" sheet="1" objects="1" scenarios="1"'
+            . ' formatCells="0" formatColumns="0" formatRows="0" sort="0" autoFilter="0"/>';
+
+        return substr($xml, 0, $pos) . $tag . substr($xml, $pos);
+    }
+
+    /** <workbookProtection> goes before <bookViews> (or <sheets>) */
+    private function addWorkbookProtection(string $wb, array $p): string
+    {
+        $wb = preg_replace('~<workbookProtection\b[^>]*/>~', '', $wb);
+        $pos = strpos($wb, '<bookViews');
+        if ($pos === false) {
+            $pos = strpos($wb, '<sheets');
+        }
+        if ($pos === false) {
+            throw new RuntimeException('Could not locate the sheets list to add workbook protection.');
+        }
+        $tag = '<workbookProtection workbookAlgorithmName="SHA-512" workbookHashValue="' . $p['hash']
+            . '" workbookSaltValue="' . $p['salt'] . '" workbookSpinCount="' . $p['spin'] . '" lockStructure="1"/>';
+        return substr($wb, 0, $pos) . $tag . substr($wb, $pos);
+    }
+
     // ==================================================================
     // Building the output package
     // ==================================================================
     /** @param array<int,array{0:string,1:string}> $sheets */
     private function assemble(array $sheets, string $outPath): void
-    {
-        $f  = $this->files;
-        $ct = $f['[Content_Types].xml'];
-        $sdir = dirname($this->sheetPath);
+{
+    $prot = null;
+    if ($this->freePlan) {
+        // Add FDTNexa watermark before copying the master drawing to other layers.
+        $this->addWatermarkToMasterDrawing();
+        $prot = $this->newProtection();
+    }
+
+    $f  = $this->files;
+    $ct = $f['[Content_Types].xml'];
+    $sdir = dirname($this->sheetPath);
+
+    if ($prot !== null) {
+        if (!isset($f['xl/styles.xml'])) {
+            throw new RuntimeException('Template is missing xl/styles.xml. Please re-save it from Excel.');
+        }
+        $f['xl/styles.xml'] = $this->unlockAllCells($f['xl/styles.xml']);
+    }
 
         // calcChain lists cells of the old single sheet: drop it (Excel rebuilds it)
         unset($f['xl/calcChain.xml']);
@@ -640,6 +836,9 @@ class SoilLayerGenerator
         $newRels = '';
 
         foreach ($sheets as $idx => [$name, $xml]) {
+            if ($prot !== null) {
+                $xml = $this->addSheetProtection($xml, $prot); // every layer, Layer 1 included
+            }
             if ($idx === 0) {
                 // layer 1 = the master part itself
                 $f[$this->sheetPath] = $xml;
@@ -686,6 +885,10 @@ class SoilLayerGenerator
         }
 
         $wb = str_replace($this->sheetTag, implode('', $newSheetTags), $wb);
+
+        if ($prot !== null && $this->lockStructure) {
+            $wb = $this->addWorkbookProtection($wb, $prot);
+        }
 
         // defined names: replicate the master's sheet-scoped names (Print_Area, Print_Titles...) per layer
         if (preg_match('~<definedNames>(.*?)</definedNames>~s', $wb, $dn)) {
