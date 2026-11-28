@@ -233,13 +233,6 @@ a.fx-card:focus-visible::after{opacity:1}
 .fx-art svg,.fx-artimg{position:relative;z-index:1}
 .fx-artimg{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 16px 18px rgba(0,0,0,.55))}
 
-/* phones: lighter, static version */
-@media(max-width:767px){
-  .fx-orb,.fx-lay,.fx-ruler,.fx-beam,.fx-scan,.fx-conduit,.fx-conn,.fx-vline{display:none}
-  .cs,.fx-kart,.fx-bg,.fx-tool::before,.fx-scene .fx-spin{animation:none}
-  .fx-stage{height:300px}
-}
-
 /* ===== Stage 3 · orbiting illustrations ===== */
 @keyframes fx-orbit{
   0%,100%{translate:7px 0;scale:1}12.5%{translate:5px -4px;scale:.98}25%{translate:0 -6px;scale:.96}37.5%{translate:-5px -4px;scale:.98}
@@ -253,20 +246,55 @@ a.fx-card:focus-visible::after{opacity:1}
 .fx-kart::before{inset:2%}
 .fx-art::after{left:50%;top:0;height:100%;aspect-ratio:1/1;translate:-50% 0}
 .fx-g4>:nth-child(even) .fx-kart,.fx-g2>.fx-tool:nth-child(2) .fx-art svg,.fx-g2>.fx-tool:nth-child(2) .fx-artimg{animation-direction:reverse,alternate}
-@media(max-width:767px){.fx-kart,.fx-art svg,.fx-artimg{animation:none}.fx-kart::before,.fx-art::after{display:none}}
 
 /* ===== Stage 4 · true 3D turntable objects (desktop; SVG art stays as fallback) ===== */
 @keyframes fx-turn{to{transform:rotateX(-22deg) rotateY(360deg)}}
 .fx-tt{position:absolute;inset:0;display:grid;place-items:center;perspective:640px;pointer-events:none}
 .fx-tt3d{position:relative;width:0;height:0;scale:var(--k,1);transform-style:preserve-3d;transform:rotateX(-22deg) rotateY(0);animation:fx-turn 22s linear infinite;will-change:transform}
 .fx-tt3d i{position:absolute;left:50%;top:50%;display:grid;place-items:center;font:700 11px/1 system-ui,sans-serif;color:#06202a}
-.has3d>svg,.has3d>.fx-artimg{display:none}
 .fx-kart.has3d{animation:fx-orbit 16s linear infinite;animation-delay:var(--d,0s)}
 .fx-kart.has3d::after{content:"";position:absolute;left:16%;right:16%;bottom:4%;height:11%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent)}
 @media(max-width:1023px){.fx-art .fx-tt3d{scale:calc(var(--k,1)*.8)}}
-@media(max-width:767px){.fx-tt{display:none}}
 
-@media(max-width:480px){.fx-ico{width:43px;height:43px}.fx-num{font-size:2.1rem}.fx-mt{font-size:1.3rem}}
+/* ===== Stage 5 · mobile & small-screen polish ===== */
+.has3d>svg,.has3d>.fx-artimg{display:none!important}
+.fx-cta{max-width:100%}
+@media(max-width:767px){
+  .fx-root{--gap:1rem;padding-top:1.25rem}
+  .fx-hero{gap:1rem}
+  .fx-stage{width:min(100%,250px);height:250px}
+  .fx-sec{margin-top:2rem}
+  .fx-tool{clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px))}
+  .fx-tool .fx-in{padding:1.25rem}
+  .fx-tool .fx-in::before,.fx-tool .fx-in::after{width:22px;height:22px}
+  .fx-art{height:120px}
+  .fx-cta{width:100%;justify-content:center}
+  .fx-kpi,.fx-kin{min-height:216px}
+}
+@media(max-width:480px){
+  .fx-wrap{padding:0 .75rem}
+  .fx-h1{font-size:clamp(1.75rem,9vw,2.2rem)}
+  .fx-kart{width:42%}
+  .fx-donut{width:116px;height:116px}
+  .fx-mt{font-size:1.25rem}
+  .fx-leg{min-width:0}
+}
+
+/* ===== THE NEW ANDROID 12+ RULE ===== */
+@media (max-width: 767px) {
+  @supports (transform-style: preserve-3d) and (backdrop-filter: blur(10px)) {
+    .fx-bg { animation: fx-drift 40s ease-in-out infinite alternate; }
+    .fx-kart { animation: fx-orbit 16s linear infinite, fx-sway 8s ease-in-out infinite alternate; }
+    .fx-kart.has3d { animation: fx-orbit 16s linear infinite; }
+    .fx-kart.has3d::after { display: block; }
+    .fx-art svg, .fx-artimg { animation: fx-orbit 16s linear infinite, fx-sway 8s ease-in-out infinite alternate; }
+    .fx-tt { display: grid; }
+    .fx-tool::before { animation: fx-electric 9s linear infinite; }
+    .fx-scene .fx-spin { animation: fx-rot 9s linear infinite; }
+    .fx-donut .sg { animation: fx-draw 1.1s ease-out both; }
+  }
+}
+
 @media(prefers-reduced-motion:reduce){.fx-root *,.fx-root *::before,.fx-root *::after{animation:none!important;transition:none!important}}
 </style>
 
@@ -767,7 +795,7 @@ var FXT=(function(){
 })();
 
 (function(){
-  if(!matchMedia('(min-width:768px)').matches||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   document.querySelectorAll('[data-tt]').forEach(function(el,n){
     if(el.querySelector('img'))return;
     var F,dy=parseFloat(el.getAttribute('data-dy'))||0;
